@@ -1,0 +1,16 @@
+config FB_LS020
+	tristate "LS020 Siemens S65 TFT LCD framebuffer support"
+	depends on FB && SPI && GPIOLIB
+	select FB_SYS_FILLRECT
+	select FB_SYS_COPYAREA
+	select FB_SYS_IMAGEBLIT
+	select FB_SYS_FOPS
+	select FB_DEFERRED_IO
+	help
+	  This is a framebuffer driver for the LS020 176x132 TFT LCD
+	  display from Siemens S65 mobile phones. The display uses SPI
+	  interface and requires additional GPIO pins for reset and
+	  data/command selection.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called ls020_fb.
