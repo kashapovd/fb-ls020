@@ -1,0 +1,32 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+    compatible = "allwinner,sun50i-h618,sun50i-h616";
+
+    fragment@0 {
+        target = <&spi1>;
+        __overlay__ {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            status = "okay";
+            pinctrl-names = "default";
+            pinctrl-0 = <&spi1_pins>, <&spi1_cs0_pin>;
+
+            ls020: ls020@0 {
+                compatible = "siemens,ls020";
+                reg = <0>;
+                spi-max-frequency = <60000000>;
+                status = "okay";
+                
+                ls020-reset-gpios = <&pio 8 14 0>; /* PI14, active high */
+                ls020-dc-gpios = <&pio 7 4 0>;    /* PH4, active high */
+                
+                width = <176>;
+                height = <132>;
+                bpp = <16>;
+                fps = <25>;
+            };
+        };
+    };
+};

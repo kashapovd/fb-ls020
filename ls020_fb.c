@@ -371,14 +371,14 @@ static int ls020_fb_probe(struct spi_device *spi)
 	par->invert = false;
 	
 	/* Get GPIO pins */
-	par->rst_gpio = devm_gpiod_get(dev, "reset", GPIOD_OUT_LOW);
+	par->rst_gpio = devm_gpiod_get(dev, "ls020-reset", GPIOD_OUT_LOW);
 	if (IS_ERR(par->rst_gpio)) {
 		dev_err(dev, "Failed to get reset GPIO\n");
 		retval = PTR_ERR(par->rst_gpio);
 		goto gpio_fail;
 	}
 	
-	par->rs_gpio = devm_gpiod_get(dev, "dc", GPIOD_OUT_LOW);
+	par->rs_gpio = devm_gpiod_get(dev, "ls020-dc", GPIOD_OUT_LOW);
 	if (IS_ERR(par->rs_gpio)) {
 		dev_err(dev, "Failed to get RS/DC GPIO\n");
 		retval = PTR_ERR(par->rs_gpio);
