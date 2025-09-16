@@ -26,13 +26,10 @@ sudo killall Xorg 2>/dev/null || true
 echo "Starting X server on display :1..."
 echo "Using XDG_RUNTIME_DIR: $XDG_RUNTIME_DIR"
 
-# Запустить X сервер с исправленной конфигурацией
 sudo X :1 -config xorg-ls020.conf -verbose 7 &
 
-# Дождаться запуска X сервера
 sleep 3
 
-# Проверить что X сервер запустился
 if pgrep -f "X :1" > /dev/null; then
     echo "✅ X server started successfully!"
     echo "Environment variables set:"
