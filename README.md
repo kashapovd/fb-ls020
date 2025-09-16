@@ -2,7 +2,7 @@
 
 Linux framebuffer driver for Siemens S65 LS020 TFT LCD display. Cross-platform, Native and Fast
 
-<img src="demo/image.jpg" width=30% height=30%>
+<img src="demo/image.jpg" width=50% height=50%>
 
 ## Features
 
