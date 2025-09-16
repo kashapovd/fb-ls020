@@ -1,32 +1,33 @@
 #!/bin/bash
+export FRAMEBUFFER=fb0
 
 echo "=== Starting Xorg on LS020 Display ==="
 
-# Проверить что framebuffer существует
-if [ ! -c /dev/fb0 ]; then
-    echo "ERROR: /dev/fb0 not found! Load ls020_fb module first."
+if [ ! -c /dev/$FRAMEBUFFER ]; then
+    echo "ERROR: /dev/$FRAMEBUFFER not found! Load ls020_fb module first."
     exit 1
 fi
 
-# Проверить информацию о framebuffer
 echo "Framebuffer info:"
-cat /sys/class/graphics/fb0/virtual_size
-echo "Color depth: $(cat /sys/class/graphics/fb0/bits_per_pixel) bits"
+cat /sys/class/graphics/$FRAMEBUFFER/virtual_size 2>/dev/null || echo "Cannot read virtual_size"
+echo "Color depth: $(cat /sys/class/graphics/$FRAMEBUFFER/bits_per_pixel 2>/dev/null || echo 'unknown') bits"
 echo ""
 
-# Установить переменные окружения
 export DISPLAY=:1
-export FRAMEBUFFER=/dev/fb0
+export XDG_RUNTIME_DIR=/tmp/runtime-$USER
+export XDG_SESSION_TYPE=x11
 
-# Остановить текущий X сервер (если запущен)
-sudo systemctl stop lightdm 2>/dev/null || true
-sudo systemctl stop gdm3 2>/dev/null || true
+mkdir -p $XDG_RUNTIME_DIR
+chmod 700 $XDG_RUNTIME_DIR
+
+
 sudo killall Xorg 2>/dev/null || true
 
 echo "Starting X server on display :1..."
+echo "Using XDG_RUNTIME_DIR: $XDG_RUNTIME_DIR"
 
-# Запустить X сервер
-sudo X :1 -config /home/orangepi/ls020_driver/xorg-ls020.conf -verbose 7 &
+# Запустить X сервер с исправленной конфигурацией
+sudo X :1 -config xorg-ls020.conf -verbose 7 &
 
 # Дождаться запуска X сервера
 sleep 3
@@ -34,8 +35,17 @@ sleep 3
 # Проверить что X сервер запустился
 if pgrep -f "X :1" > /dev/null; then
     echo "✅ X server started successfully!"
-    echo "To test, run: DISPLAY=:1 xterm &"
+    echo "Environment variables set:"
+    echo "  DISPLAY=$DISPLAY"
+    echo "  XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR"
+    echo ""
+    echo "To test applications:"
+    echo "  DISPLAY=:1 XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR xterm &"
+    echo "  DISPLAY=:1 XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR xclock &"
+    echo ""
     echo "To stop: sudo killall Xorg"
 else
     echo "❌ Failed to start X server. Check /var/log/Xorg.1.log"
+    echo "Recent X server errors:"
+    sudo tail -20 /var/log/Xorg.1.log 2>/dev/null || echo "No log file found"
 fi

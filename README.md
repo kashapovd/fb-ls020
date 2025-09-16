@@ -1,209 +1,70 @@
-# LS020 Linux Framebuffer Driver
+# LS020 Display Driver
 
-Драйвер ядра Linux для TFT LCD дисплея LS020 от телефона Siemens S65.
+Linux framebuffer driver for Siemens S65 LS020 TFT LCD display. Cross-platform, Native and Fast
 
-## Технические характеристики
+## Features
 
-- **Разрешение**: 176 x 132 пикселя
-- **Глубина цвета**: 16 бит (RGB565)
-- **Интерфейс**: SPI
-- **Напряжение питания**: 3.3V (совместимо с 2.9V)
-- **Подсветка**: 9-12V (опционально)
+- Cross-platform. Module uses Linux GPIO and SPI subsystems instead of platform specific
+- Blazing fast framebuffer management with native Linux support
+- Adjustable refresh rate (1-120 FPS), very good on 40-60
+- X11 compatibility (see scripts to run X server)
+- Device Tree supported
 
-## Распиновка LS020
+## The Display
 
-```
-Пин  | Сигнал | Описание
------|--------|----------
-1    | LED-   | Катод подсветки
-2    | LED+   | Анод подсветки (9-12V)
-3    | NC     | Не подключен
-4    | GND    | Земля
-5    | VCC    | Питание +2.9V (3.3V работает)
-6    | MOSI   | SPI Data (Master Out Slave In)
-7    | SCL    | SPI Clock
-8    | CS     | Chip Select (активный низкий)
-9    | RST    | Reset (активный низкий)
-10   | RS/DC  | Register Select / Data Command
-```
+- **Resolution:** 176x132 pixels 
+- **Color:** 16-bit RGB565
+- **Interface:** SPI, 65 MHz
 
-## Подключение к Orange Pi Zero 2W
+## Installation
 
-| LS020 | Orange Pi | GPIO  | Функция |
-|-------|-----------|-------|---------|
-| 6     | PH7       | -     | SPI1_MOSI |
-| 7     | PH6       | -     | SPI1_CLK |
-| 8     | PH5       | -     | SPI1_CS0 |
-| 9     | PI14      | 270   | RST |
-| 10    | PH4       | 228   | RS/DC |
-| 5     | 3.3V      | -     | VCC |
-| 4     | GND       | -     | GND |
+```bash
+# Compile driver
+make
 
-## Установка
-
-1. **Клонирование и сборка:**
-   ```bash
-   cd /home/orangepi/ls020_driver
-   sudo ./install.sh
-   ```
-
-2. **Ручная установка:**
-   ```bash
-   # Компиляция драйвера
-   make
-
-   # Компиляция Device Tree Overlay
-   dtc -@ -I dts -O dtb -o ls020-overlay.dtbo ls020-overlay.dts
-
-   # Установка драйвера
-   sudo make install
-
-   # Копирование overlay
-   sudo cp ls020-overlay.dtbo /boot/overlays/
-   ```
-
-3. **Настройка загрузки:**
-   
-   Добавьте в `/boot/armbianEnv.txt`:
-   ```
-   overlays=ls020-overlay
-   ```
-   
-   Или в `/boot/config.txt`:
-   ```
-   dtoverlay=ls020-overlay
-   ```
-
-4. **Перезагрузка:**
-   ```bash
-   sudo reboot
-   ```
-
-## Использование
-
-1. **Загрузка модуля:**
-   ```bash
-   sudo modprobe ls020_fb
-   ```
-
-2. **Проверка:**
-   ```bash
-   ls /dev/fb*  # должен появиться /dev/fb1
-   dmesg | grep ls020  # проверить логи
-   ```
-
-3. **Основные операции:**
-   ```bash
-   # Включить дисплей
-   echo 0 > /sys/class/graphics/fb1/blank
-   
-   # Заливка цветом (красный)
-   dd if=/dev/zero bs=46464 count=1 | tr '\000' '\377' > /dev/fb1
-   
-   # Случайная картинка
-   cat /dev/urandom > /dev/fb1
-   
-   # Очистка (черный)
-   dd if=/dev/zero of=/dev/fb1 bs=46464 count=1
-   ```
-
-## Программирование
-
-### Пример на C
-
-```c
-#include <fcntl.h>
-#include <sys/mman.h>
-#include <unistd.h>
-#include <stdint.h>
-
-#define FB_WIDTH 176
-#define FB_HEIGHT 132
-
-int main() {
-    int fd = open("/dev/fb1", O_RDWR);
-    uint16_t *fb = mmap(NULL, FB_WIDTH * FB_HEIGHT * 2, 
-                        PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    
-    // Заливка красным цветом (RGB565: 0xF800)
-    for (int i = 0; i < FB_WIDTH * FB_HEIGHT; i++) {
-        fb[i] = 0xF800;
-    }
-    
-    munmap(fb, FB_WIDTH * FB_HEIGHT * 2);
-    close(fd);
-    return 0;
-}
+# Load driver  
+sudo insmod ls020_fb.ko
 ```
 
-### Пример на Python
+## Parameters
 
-```python
-import mmap
-import struct
+- `rotation`: Display orientation (0-3, default: 0)
+- `fps`: Refresh rate (1-120, default: 60) 
+- `partial_update`: Enable partial updates (default: true)
 
-FB_WIDTH = 176
-FB_HEIGHT = 132
-
-with open('/dev/fb1', 'r+b') as f:
-    with mmap.mmap(f.fileno(), FB_WIDTH * FB_HEIGHT * 2) as fb:
-        # Заливка синим цветом (RGB565: 0x001F)
-        for i in range(0, len(fb), 2):
-            fb[i:i+2] = struct.pack('<H', 0x001F)
+Example:
+```bash
+sudo insmod ls020_fb.ko rotation=0 fps=40
 ```
 
-## Цветовая схема RGB565
+## Device Tree
 
-| Цвет    | Hex    | RGB      |
-|---------|--------|----------|
-| Черный  | 0x0000 | 0,0,0    |
-| Красный | 0xF800 | 255,0,0  |
-| Зеленый | 0x07E0 | 0,255,0  |
-| Синий   | 0x001F | 0,0,255  |
-| Белый   | 0xFFFF | 255,255,255 |
+Add to your device tree:
+```dts
+&spi0 {
+    ls020@0 {
+        compatible = "siemens,ls020";
+        reg = <0>;
+        spi-max-frequency = <30000000>;
+        ls020-reset-gpios = <&pio 8 8 GPIO_ACTIVE_HIGH>;
+        ls020-dc-gpios = <&pio 8 7 GPIO_ACTIVE_HIGH>;
+    };
+};
+```
 
-## Отладка
+## Usage
 
-1. **Проверка SPI:**
-   ```bash
-   ls /sys/class/spi_master/
-   cat /sys/class/spi_master/spi1/device/modalias
-   ```
+### X11  
+```bash
+# Start X server
+./scripts/start_xorg.sh
 
-2. **Проверка GPIO:**
-   ```bash
-   sudo cat /sys/kernel/debug/gpio
-   ```
+# Run applications
+DISPLAY=:1 xterm &
+```
 
-3. **Логи драйвера:**
-   ```bash
-   dmesg | grep ls020
-   journalctl -f | grep ls020
-   ```
-
-4. **Удаление модуля:**
-   ```bash
-   sudo modprobe -r ls020_fb
-   ```
-
-## Известные проблемы
-
-1. **Медленная работа** - SPI работает на максимальной скорости 32MHz, но может потребоваться снижение
-2. **Мерцание** - используется deferred I/O с частотой 25 FPS
-3. **Ориентация** - по умолчанию поворот 0, может потребоваться изменение
-
-## Настройка производительности
-
-В коде драйвера можно изменить:
-- `spi->max_speed_hz` для скорости SPI
-- `ls020_defio.delay = HZ / FPS` для частоты обновления
-- `par->orientation` для поворота дисплея
-
-## Лицензия
-
-GPL v2 - совместимо с ядром Linux
-
-## Автор
-
-Основано на Arduino библиотеке Yaroslav Kashapov (@kashapovd)
-Адаптировано для Linux kernel framebuffer
+### Gaming
+```bash
+# RetroArch
+DISPLAY=:1 retroarch
+```
