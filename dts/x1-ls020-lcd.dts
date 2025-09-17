@@ -1,0 +1,31 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+    compatible = "ky,orangepi-rv2", "ky,x1";
+
+    fragment@0 {
+        target = <&spi3>;  // Using SPI3 (spi3.0 is available)
+        __overlay__ {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            status = "okay";
+            
+            ls020: ls020@0 {
+                compatible = "siemens,ls020";
+                reg = <0>;
+                spi-max-frequency = <40000000>;  // Conservative for RISC-V
+                status = "okay";
+                
+                // Using available GPIO pins from x1-gpio controller
+                ls020-reset-gpios = <&gpio 91 0>;  // PIN91, active high
+                ls020-dc-gpios = <&gpio 92 0>;     // PIN92, active high
+                
+                width = <176>;
+                height = <132>;
+                bpp = <16>;
+                fps = <20>;  // Lower FPS for RISC-V performance
+            };
+        };
+    };
+};

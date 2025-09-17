@@ -58,15 +58,17 @@ Add to your device tree:
 
 ### X11  
 ```bash
-# Start X server
-./scripts/start_xorg.sh
 
-# Run applications
+sudo apt install apt install xserver-xorg-core xorg xserver-xorg-video-fbdev
+cd scripts/
+./start_xorg.sh
+
+sudo apt install xterm
 DISPLAY=:1 xterm &
 ```
 
 ### Gaming
 ```bash
-# RetroArch
-DISPLAY=:1 retroarch
+sudo apt install xterm
+DISPLAY=:1 retroarch --config etc/retroarch.cfg
 ```

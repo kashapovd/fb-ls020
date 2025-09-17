@@ -32,7 +32,7 @@ test: app
 	sudo ./$(TEST_BINARY)
 
 reload:
-	sudo sh -c "echo spi1.0 > /sys/bus/spi/drivers/ls020_fb/unbind"
+	sudo sh -c "echo spi3.0 > /sys/bus/spi/drivers/ls020_fb/unbind"
 	sudo rmmod ls020_fb
 	sudo cp ls020_fb.ko /lib/modules/$(KERNEL_VERSION)/kernel/drivers/video/fbdev/
 	sudo depmod -a
